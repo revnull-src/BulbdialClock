@@ -1,32 +1,32 @@
 /*
  BulbdialClock.ino
-
+ 
  Default software for the Bulbdial Clock kit designed by
  Evil Mad Scientist Laboratories: http://www.evilmadscientist.com/go/bulbdialkit
-
- "Trying" to work with Arduino 1.0 by Ray Ramirez
+ 
+ Updated to work with Arduino 1.0 by Ray Ramirez
  Also requires Time library:  http://www.arduino.cc/playground/Code/Time
-
+ 
  Target: ATmega168, clock at 16 MHz.
-
+ 
  Version 1.0.1 - 1/14/2012
  Copyright (c) 2009 Windell H. Oskay.  All right reserved.
  http://www.evilmadscientist.com/
-
+ 
  This library is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
-
+ 
  This library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
-
+ 
  You should have received a copy of the GNU General Public License
  along with this library.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
+ 
+ */
 
 #include <EEPROM.h>            // For saving settings
 #include <Wire.h>              // For optional RTC module
@@ -34,19 +34,19 @@
 
 /*
  EEPROM variables that are saved:  7
-
+ 
  * Brightness setting (range: 1-8)  Default: 8   (Fully bright)
-
+ 
  * Red brightness  (range: 0-63)    Default: 20
  * Green brightness (range: 0-63)   Default: 63
  * Blue brightness (range: 0-63)    Default: 63
-
+ 
  * Time direction (Range: 0,1)      Default: 0  (Clockwise)
  * Fade style (Range: 0,1)         Default: 1  (Fade enabled)
-
+ 
  * Alignment mode                  Default: 0
-
-*/
+ 
+ */
 
 // "Factory" default configuration can be configured here:
 #define MainBrightDefault 8
@@ -54,8 +54,10 @@
 #define RedBrightDefault 63  // Use 63, default, for kits with monochrome LEDs!
 #define GreenBrightDefault 63
 #define BlueBrightDefault 63
-#define FadeModeDefault 1
+
 #define CCWDefault 0
+#define FadeModeDefault 1
+
 #define AlignModeDefault 0
 
 #define TIME_MSG_LEN 11  // time sync to PC is HEADER followed by unix time_t as ten ascii digits
@@ -208,8 +210,7 @@ boolean getPCtime() {
           pctime = (10 * pctime) + (c - '0') ;  // convert digits to a number
         }
       }
-      // DateTime.sync(pctime);  // Sync Arduino clock to the time received on the serial port
-      setTime(pctime);
+      setTime(pctime);  // Sync Arduino clock to the time received on the serial port
       return true;  // return true if time message received on the serial port
     }
   }
@@ -228,20 +229,14 @@ void printDigits(byte digits){
 
 void digitalClockDisplay(){
   // digital clock display of current date and time
-  // Serial.print(DateTime.Hour,DEC);
-  // printDigits(DateTime.Minute);
-  // printDigits(DateTime.Second);
   Serial.print(hour(),DEC);
   printDigits(minute());
   printDigits(second());
   Serial.print(" ");
-  // Serial.print(DateTimeStrings.dayStr(DateTime.DayofWeek));
   Serial.print(dayStr(weekday()));
   Serial.print(" ");
-  // Serial.print(DateTimeStrings.monthStr(DateTime.Month));
   Serial.print(monthStr(month()));
   Serial.print(" ");
-  // Serial.println(DateTime.Day,DEC);
   Serial.println(day(),DEC);
 }
 
@@ -325,7 +320,7 @@ void ApplyDefaults (void) {
    * Blue brightness (range: 0-63)    Default: 63
    * Time direction (Range: 0,1)      Default: 0  (Clockwise)
    * Fade style (Range: 0,1)          Default: 1  (Fade enabled)
-  */
+   */
 
   MainBright = MainBrightDefault;
   HourBright = RedBrightDefault;
@@ -481,25 +476,25 @@ void normalFades(void) {
 void RTCsetTime(byte hourIn, byte minuteIn, byte secondIn)
 {
   Wire.beginTransmission(104);  // 104 is DS3231 device address
-  Wire.write("0");  // start at register 0
+  Wire.write((byte)0);  // start at register 0
 
   byte ts = secondIn / 10;
   byte os = secondIn - ts*10;
   byte ss = (ts << 4) + os;
 
-  Wire.write(ss);  //Send seconds as BCD
+  Wire.write(ss);  // Send seconds as BCD
 
   byte tm = minuteIn /10;
   byte om = minuteIn - tm*10;
   byte sm = (tm << 4 ) | om;
 
-  Wire.write(sm);  //Send minutes as BCD
+  Wire.write(sm);  // Send minutes as BCD
 
   byte th = hourIn /10;
   byte oh = hourIn - th*10;
   byte sh = (th << 4 ) | oh;
 
-  Wire.write(sh);  //Send hours as BCD
+  Wire.write(sh);  // Send hours as BCD
 
   Wire.endTransmission();
 
@@ -511,7 +506,7 @@ byte RTCgetTime()
 
   byte status = 0;
   Wire.beginTransmission(104);  // 104 is DS3231 device address
-  Wire.write("0");  // start at register 0
+  Wire.write((byte)0);  // start at register 0
   Wire.endTransmission();
   Wire.requestFrom(104, 3);  // request three bytes (seconds, minutes, hours)
 
@@ -540,7 +535,7 @@ byte RTCgetTime()
     minutes = (((minutes & 0b11110000)>>4)*10 + (minutes & 0b00001111));  // convert BCD to decimal
     hours = (((hours & 0b00110000)>>4)*10 + (hours & 0b00001111));  // convert BCD to decimal (assume 24 hour mode)
 
-    //Optional: report time::
+    // Optional: report time::
     // Serial.print(hours); Serial.print(":"); Serial.print(minutes); Serial.print(":"); Serial.println(seconds);
 
     if ((minutes) && (MinNow) ){
@@ -580,7 +575,6 @@ byte RTCgetTime()
 void setup()  // run once, when the sketch starts
 {
   Serial.begin(19200);
-  // DateTime.sync(0);
   setTime(0);
 
   PORTB = 0;
@@ -589,7 +583,7 @@ void setup()  // run once, when the sketch starts
 
   DDRB = 0;  // All inputs
   DDRC = 0;  // All inputs
-  DDRD = _BV(1);  //All inputs except TX.
+  DDRD = _BV(1);  // All inputs except TX.
 
   PORTD = buttonmask;  // Pull-up resistors for buttons
 
@@ -609,7 +603,7 @@ void setup()  // run once, when the sketch starts
    SecBright = 63;
    CCW = 0;  // presume clockwise, not counterclockwise.
    FadeMode = 1;  // Presume fading is enabled.
-  */
+   */
 
   VCRmode = 1;  // Time is NOT yet set.
   FactoryResetDisable = 0;
@@ -642,9 +636,9 @@ void setup()  // run once, when the sketch starts
   /*
    // HIGHLY OPTIONAL: Set jardcoded RTC Time from within the program.
    // Example: Set time to 2:52:45.
-
+   
    RTCsetTime(2,52,45);
-  */
+   */
 
   ExtRTC = 0;
 
@@ -707,7 +701,7 @@ void loop()
     TimeSinceButton = 0;
 
     if ((PINDcopy & 32) && ((PINDLast & 32) == 0))
-    {  //"+" Button was pressed previously, and was just released!
+    {  // "+" Button was pressed previously, and was just released!
 
       if ( MomentaryOverridePlus)
       {
@@ -727,7 +721,7 @@ void loop()
                 AlignRate++;
             }
             else
-              IncrAlignVal();  //even mode
+              IncrAlignVal();  // Even mode:
 
           }
           else if (OptionMode) {
@@ -789,10 +783,10 @@ void loop()
     }
 
     if ((PINDcopy & 64) && ((PINDLast & 64) == 0))
-    {  //"-" Button was pressed and just released!
+    {  // "-" Button was pressed and just released!
 
-    VCRmode = 0;  // End once any buttons have been pressed...
-    TimeSinceButton = 0;
+      VCRmode = 0;  // End once any buttons have been pressed...
+      TimeSinceButton = 0;
 
       if ( MomentaryOverrideMinus)
       {
@@ -812,7 +806,7 @@ void loop()
                 AlignRate--;
             }
             else
-              DecrAlignVal();  //even mode
+              DecrAlignVal();  // Even mode:
 
           }
           else if (OptionMode) {
@@ -865,7 +859,7 @@ void loop()
                 SecNow = 59;
             }
           }
-          else {  //Normal brightness adjustment mode
+          else {  // Normal brightness adjustment mode
             if (MainBright > 1)
               MainBright--;
             else
@@ -876,10 +870,10 @@ void loop()
     }
 
     if ((PINDcopy & 128) && ((PINDLast & 128) == 0))
-    {  //"Z" Button was pressed and just released!
+    {  // "Z" Button was pressed and just released!
 
-    VCRmode = 0;  // End once any buttons have been pressed...
-    TimeSinceButton = 0;
+      VCRmode = 0;  // End once any buttons have been pressed...
+      TimeSinceButton = 0;
 
       if ( MomentaryOverrideZ)
       {
@@ -951,7 +945,7 @@ void loop()
       FactoryResetDisable = 1;
 
       if (TimeSinceButton < 250)
-         TimeSinceButton++;
+        TimeSinceButton++;
 
       if (TimeSinceButton == 10)  // 10 s after last button released...
       {
@@ -996,10 +990,10 @@ void loop()
 
       // Hold + and - for 3 s AT POWER ON to restore factory settings.
       if ( FactoryResetDisable == 0){
-      ApplyDefaults();
-      EESaveSettings();
-      AllLEDsOff();  // Blink LEDs off to indicate restoring data
-      delay(100);
+        ApplyDefaults();
+        EESaveSettings();
+        AllLEDsOff();  // Blink LEDs off to indicate restoring data
+        delay(100);
       }
       else
       {
@@ -1074,8 +1068,8 @@ void loop()
       SecNow = 0;
       MinNow++;
 
-    if ((SettingTime == 0) && ExtRTC)  // Check value at RTC ONCE PER MINUTE, if enabled.
-      RTCgetTime();                    // Do not check RTC time, if we are in time-setting mode.
+      if ((SettingTime == 0) && ExtRTC)  // Check value at RTC ONCE PER MINUTE, if enabled.
+        RTCgetTime();                    // Do not check RTC time, if we are in time-setting mode.
     }
 
     if (MinNow > 59){
@@ -1090,12 +1084,11 @@ void loop()
 
   }
   if (RefreshTime) {
-    // Calculate which LEDs to light up to give
-    // the correct shadows:
+    // Calculate which LEDs to light up to give the correct shadows:
 
     if (AlignMode){
 
-      if (AlignMode & 1) {  //ODD mode, auto-advances
+      if (AlignMode & 1) {  // ODD mode, auto-advances
 
         byte AlignRateAbs;  // Absolute value of AlignRate
 
@@ -1318,7 +1311,7 @@ void loop()
           HrFade1 = 0;
         }
         else
-        normalFades();
+          normalFades();
       }
     }
 
@@ -1406,16 +1399,13 @@ void loop()
 
   /*
   temp = millis() - temp;
-   Serial.println(temp,DEC);
-  */
+  Serial.println(temp,DEC);
+   */
 
   // Can this sync be tried only once per second?
   if( getPCtime()) {  // try to get time sync from pc
 
     // Set time to that given from PC.
-    // MinNow = DateTime.Minute;
-    // SecNow = DateTime.Second;
-    // HrNow = DateTime.Hour;
     MinNow = minute();
     SecNow = second();
     HrNow = hour();
@@ -1425,25 +1415,19 @@ void loop()
 
     // Print confirmation
     Serial.println("Clock synced at: ");
-    // Serial.println(DateTime.now(),DEC);
     Serial.println(now(),DEC);
 
-    // if(DateTime.available()) {  // update clocks if time has been synced
-    if(timeStatus()) {  // update clocks if time has been synced
+    if(timeStatus() == timeSet) {  // update clocks if time has been synced
 
-      // if ( prevtime != DateTime.now() )
       if ( prevtime != now() )
       {
         if (ExtRTC)
           RTCsetTime(HrNow,MinNow,SecNow);
 
-        // DateTime.available();  //refresh the Date and time properties
-        timeStatus();  //refresh the Date and time properties
+        timeStatus();  // refresh the Date and time properties
         digitalClockDisplay( );  // update digital clock
-        // prevtime = DateTime.now();
         prevtime = now();
       }
     }
   }
 }
-
